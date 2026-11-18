@@ -1,0 +1,13 @@
+import { Router } from 'express';
+import * as controller from '../controllers/auth.controller.js';
+import { autenticar } from '../middlewares/auth.js';
+const auth = Router();
+auth.post('/cadastro', controller.cadastrar);
+auth.post('/login', controller.login);
+auth.post('/logout', autenticar, controller.logout);
+const usuarios = Router();
+usuarios.use(autenticar);
+usuarios.get('/me', controller.me);
+usuarios.put('/me', controller.atualizarPerfil);
+usuarios.delete('/me', controller.excluirConta);
+export { auth, usuarios };
