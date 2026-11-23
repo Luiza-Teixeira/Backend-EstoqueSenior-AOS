@@ -1,5 +1,6 @@
-import { Produto } from "../models/index.js";
-import { exigir } from "../utils/errors.js";
+import { Produto, EntradaMercadoria, ItemVenda } from "../models/index.js";
+
+import { AppError, exigir } from "../utils/errors.js";
 
 // Lista somente os produtos do usuário autenticado.
 export async function listar(usuarioId) {
@@ -64,10 +65,6 @@ export async function excluir(usuarioId, id) {
 
   exigir(produto, 404, "Produto não encontrado.");
 
-  // A exclusão só deve ocorrer quando não houver
-  // registros históricos vinculados ao produto.
-  const { EntradaMercadoria, ItemVenda } = await import("../models/index.js");
-
   const entradas = await EntradaMercadoria.count({
     where: { produtoId: id },
   });
@@ -77,8 +74,6 @@ export async function excluir(usuarioId, id) {
   });
 
   if (entradas > 0 || itensVenda > 0) {
-    const { AppError } = await import("../utils/errors.js");
-
     throw new AppError(
       409,
       "Não é possível excluir um produto com movimentações registradas.",
