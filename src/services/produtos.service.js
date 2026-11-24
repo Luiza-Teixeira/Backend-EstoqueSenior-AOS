@@ -1,13 +1,16 @@
+import { produtoPublico } from "../utils/format.js";
 import { Produto, EntradaMercadoria, ItemVenda } from "../models/index.js";
 
 import { AppError, exigir } from "../utils/errors.js";
 
 // Lista somente os produtos do usuário autenticado.
 export async function listar(usuarioId) {
-  return Produto.findAll({
+  const produtos = await Produto.findAll({
     where: { usuarioId },
     order: [["id", "DESC"]],
   });
+
+  return produtos.map(produtoPublico);
 }
 
 // Busca um produto específico do usuário autenticado.
@@ -18,7 +21,7 @@ export async function buscar(usuarioId, id) {
 
   exigir(produto, 404, "Produto não encontrado.");
 
-  return produto;
+  return produtoPublico(produto);
 }
 
 export async function criar(usuarioId, dados) {
@@ -32,7 +35,7 @@ export async function criar(usuarioId, dados) {
     usuarioId,
   });
 
-  return produto;
+  return produtoPublico(produto);
 }
 
 export async function atualizar(usuarioId, id, dados) {
@@ -55,7 +58,7 @@ export async function atualizar(usuarioId, id, dados) {
 
   await produto.update(alteracoes);
 
-  return produto;
+  return produtoPublico(produto);
 }
 
 export async function excluir(usuarioId, id) {

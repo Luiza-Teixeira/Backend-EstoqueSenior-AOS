@@ -11,10 +11,25 @@ const { AppError } = await import("../src/utils/errors.js");
 const { listar, buscar, criar, atualizar, excluir } =
   await import("../src/services/produtos.service.js");
 // TESTE 1 — Listar produtos do usuário
+
 test("lista somente produtos do usuário autenticado", async (t) => {
   const produtos = [
-    { id: 1, nome: "Arroz", usuarioId: 7 },
-    { id: 2, nome: "Feijão", usuarioId: 7 },
+    {
+      id: 1,
+      nome: "Arroz",
+      precoVenda: "8.50",
+      quantidadeEstoque: 10,
+      estoqueMinimo: 3,
+      usuarioId: 7,
+    },
+    {
+      id: 2,
+      nome: "Feijão",
+      precoVenda: "7.90",
+      quantidadeEstoque: 5,
+      estoqueMinimo: 2,
+      usuarioId: 7,
+    },
   ];
 
   t.mock.method(Produto, "findAll", async (opcoes) => {
@@ -24,14 +39,33 @@ test("lista somente produtos do usuário autenticado", async (t) => {
 
   const resultado = await listar(7);
 
-  assert.deepEqual(resultado, produtos);
+  assert.deepEqual(resultado, [
+    {
+      id: 1,
+      nome: "Arroz",
+      precoVenda: 8.5,
+      quantidadeEstoque: 10,
+      estoqueMinimo: 3,
+    },
+    {
+      id: 2,
+      nome: "Feijão",
+      precoVenda: 7.9,
+      quantidadeEstoque: 5,
+      estoqueMinimo: 2,
+    },
+  ]);
 });
 
 // TESTE 2 — Buscar produto existente
+
 test("busca produto pelo ID e usuário", async (t) => {
   const produto = {
     id: 1,
     nome: "Arroz",
+    precoVenda: "8.50",
+    quantidadeEstoque: 10,
+    estoqueMinimo: 3,
     usuarioId: 7,
   };
 
@@ -46,7 +80,13 @@ test("busca produto pelo ID e usuário", async (t) => {
 
   const resultado = await buscar(7, 1);
 
-  assert.deepEqual(resultado, produto);
+  assert.deepEqual(resultado, {
+    id: 1,
+    nome: "Arroz",
+    precoVenda: 8.5,
+    quantidadeEstoque: 10,
+    estoqueMinimo: 3,
+  });
 });
 
 // TESTE 3 — Produto inexistente
@@ -69,6 +109,7 @@ test("cadastra produto associado ao usuário autenticado", async (t) => {
   };
 
   t.mock.method(Produto, "create", async (registro) => {
+    // Verifica os dados enviados ao banco
     assert.equal(registro.usuarioId, 7);
     assert.equal(registro.nome, "Arroz 1kg");
     assert.equal(registro.quantidadeEstoque, 10);
@@ -78,9 +119,17 @@ test("cadastra produto associado ao usuário autenticado", async (t) => {
 
   const resultado = await criar(7, dados);
 
+  // Verifica a resposta pública da API
   assert.equal(resultado.id, 1);
-  assert.equal(resultado.usuarioId, 7);
   assert.equal(resultado.nome, "Arroz 1kg");
+  assert.equal(resultado.precoVenda, 8.5);
+  assert.equal(resultado.quantidadeEstoque, 10);
+  assert.equal(resultado.estoqueMinimo, 3);
+  assert.equal(resultado.categoria, "Alimentos");
+
+  // Dados internos não devem aparecer na resposta
+  assert.equal("usuarioId" in resultado, false);
+  assert.equal(typeof resultado.precoVenda, "number");
 });
 
 test("atualiza os dados de um produto do usuário", async (t) => {
@@ -114,7 +163,8 @@ test("atualiza os dados de um produto do usuário", async (t) => {
   assert.equal(resultado.nome, "Arroz Premium");
   assert.equal(resultado.precoVenda, 12.9);
   assert.equal(resultado.quantidadeEstoque, 10);
-  assert.equal(resultado.usuarioId, 7);
+  assert.equal("usuarioId" in resultado, false);
+  assert.equal(produto.usuarioId, 7);
 });
 
 test("impede atualizar produto de outro usuário", async (t) => {
